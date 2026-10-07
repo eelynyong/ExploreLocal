@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExploreLocal – Discover what's around you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--teal:#0e4d5c;--teal2:#1b7a8c;--sun:#f5a524;--coral:#ef6a4c;--ink:#16262c;--mute:#5f7178;--line:#e5ecee;--bg:#fff;--soft:#f3f8f9;--r:18px;--sh:0 6px 24px rgba(14,77,92,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
+h1,h2,h3,.logo{font-family:'Fraunces',Georgia,serif;line-height:1.15}
+button{font:inherit;cursor:pointer;border:0}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+section{padding:64px 0}
+.sec-h{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.sec-h h2{font-size:clamp(1.6rem,3vw,2.2rem);color:var(--teal)}
+.sec-h p{color:var(--mute)}
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{font-size:1.5rem;color:var(--teal);display:flex;align-items:center;gap:8px;font-weight:700}
+.logo span{color:var(--coral)}
+nav ul{display:flex;gap:6px;list-style:none}
+nav a{padding:8px 14px;border-radius:99px;font-weight:600;font-size:.95rem;color:var(--mute);transition:.2s}
+nav a:hover,nav a.on{background:var(--soft);color:var(--teal)}
+.tools{display:flex;gap:8px;align-items:center}
+.ib{width:40px;height:40px;border-radius:50%;background:var(--soft);color:var(--teal);display:grid;place-items:center;transition:.2s}
+.ib:hover{background:var(--teal);color:#fff}
+.burger{display:none}
+.badge{background:var(--coral);color:#fff;font-size:.7rem;border-radius:99px;padding:1px 7px;margin-left:4px}
+/* hero */
+.hero{padding:0;position:relative;color:#fff;min-height:620px;display:grid;align-items:center;background:linear-gradient(180deg,#0e4d5c 0%,#2a8da0 55%,#f7c06a 100%);overflow:hidden}
+.hero>svg{position:absolute;inset:auto 0 0 0;width:100%;height:46%}
+.hero .wrap{position:relative;z-index:2;padding-top:70px;padding-bottom:150px;text-align:center}
+.hero h1{font-size:clamp(2.4rem,6vw,4.4rem);margin-bottom:14px}
+.hero p.sub{font-size:1.15rem;opacity:.95;max-width:560px;margin:0 auto 30px}
+.search{background:#fff;color:var(--ink);max-width:720px;margin:0 auto;border-radius:99px;padding:8px;display:flex;gap:8px;box-shadow:0 14px 40px rgba(0,0,0,.25)}
+.search label{flex:1;display:flex;align-items:center;gap:10px;padding:0 16px}
+.search input{border:0;outline:0;font:inherit;width:100%;color:var(--ink);background:none}
+.btn{background:var(--coral);color:#fff;padding:13px 26px;border-radius:99px;font-weight:700;transition:.2s}
+.btn:hover{transform:translateY(-2px);background:#d9573b}
+.btn.ghost{background:var(--soft);color:var(--teal)}
+.btn.ghost:hover{background:var(--teal);color:#fff}
+.btn.sm{padding:9px 16px;font-size:.88rem}
+.quick{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:22px}
+.quick button{background:rgba(255,255,255,.18);color:#fff;padding:9px 18px;border-radius:99px;border:1px solid rgba(255,255,255,.5);font-weight:600;transition:.2s}
+.quick button:hover{background:#fff;color:var(--teal)}
+/* overview */
+.overview{background:var(--soft)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}
+.stat{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh);display:flex;gap:14px;align-items:center}
+.stat .e{font-size:1.8rem}
+.stat b{display:block;font-size:1.6rem;color:var(--teal);font-family:'Fraunces',serif}
+.stat small{color:var(--mute)}
+/* map */
+.mapgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:22px}
+.map{position:relative;border-radius:var(--r);overflow:hidden;min-height:440px;background:#dfeee4;box-shadow:var(--sh)}
+.map svg.bg{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;transform:translate(-50%,-100%);background:var(--coral);color:#fff;width:34px;height:34px;border-radius:50% 50% 50% 0;rotate:-45deg;display:grid;place-items:center;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:.2s;border:2px solid #fff}
+.pin i{rotate:45deg;font-style:normal;font-size:.95rem}
+.pin:hover,.pin.act{background:var(--teal);scale:1.25;z-index:5}
+.pin.hide{display:none}
+.tip{position:absolute;background:#fff;border-radius:12px;padding:8px 12px;box-shadow:var(--sh);font-size:.85rem;font-weight:600;pointer-events:none;transform:translate(-50%,-150%);display:none;white-space:nowrap;z-index:6}
+.you{position:absolute;left:50%;top:52%;width:18px;height:18px;border-radius:50%;background:#2d7ff9;border:3px solid #fff;box-shadow:0 0 0 8px rgba(45,127,249,.25)}
+.list{display:flex;flex-direction:column;gap:10px;max-height:440px;overflow:auto;padding:2px}
+.li{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;text-align:left;transition:.2s;width:100%}
+.li:hover,.li.act{border-color:var(--teal2);box-shadow:var(--sh)}
+.th{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font-size:1.6rem;flex:none}
+.li b{display:block;font-size:.95rem}.li small{color:var(--mute)}
+/* filters */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{background:#fff;border:1px solid var(--line);padding:8px 16px;border-radius:99px;font-weight:600;color:var(--mute);transition:.2s}
+.chip:hover{border-color:var(--teal2);color:var(--teal)}
+.chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.fbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:26px;background:var(--soft);padding:12px 16px;border-radius:var(--r)}
+.fbar select{padding:8px 12px;border-radius:10px;border:1px solid var(--line);font:inherit;background:#fff}
+.tg{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.tg input{display:none}
+.tg span{width:42px;height:24px;border-radius:99px;background:#c5d2d6;position:relative;transition:.2s}
+.tg span::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.tg input:checked+span{background:var(--teal2)}
+.tg input:checked+span::after{left:21px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;display:flex;flex-direction:column;transition:.25s;border:1px solid var(--line)}
+.card:hover{transform:translateY(-5px)}
+.img{height:190px;display:grid;place-items:center;font-size:4.2rem;position:relative}
+.img em{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);color:var(--teal);font-style:normal;font-size:.78rem;font-weight:700;padding:4px 12px;border-radius:99px}
+.img .op{position:absolute;top:12px;right:12px;font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:99px;color:#fff}
+.body{padding:18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.body h3{font-size:1.15rem;color:var(--teal)}
+.body p{color:var(--mute);font-size:.92rem;flex:1}
+.meta{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.84rem;font-weight:600}
+.meta .r{color:#c27d00}
+.acts{display:flex;gap:8px}.acts .btn{flex:1;text-align:center}
+.empty{grid-column:1/-1;text-align:center;padding:40px;color:var(--mute);background:var(--soft);border-radius:var(--r)}
+.img img,.th img,.dc>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.img em,.img .op,.img .close{z-index:2}
+.th{position:relative;overflow:hidden}
+.dc::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 35%,rgba(0,0,0,.7))}
+.dc h3,.dc small{position:relative;z-index:2}.dc .e{z-index:2}
+.hero.photo>svg path:not(:last-child),.hero.photo>svg g{display:none}
+/* nearby */
+.near{background:var(--soft)}
+.ncards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.nc{background:#fff;border-radius:var(--r);padding:26px 14px;text-align:center;box-shadow:var(--sh);font-weight:700;color:var(--teal);transition:.25s;display:block;width:100%}
+.nc:hover{transform:translateY(-5px);background:var(--teal);color:#fff}
+.nc .e{font-size:2.4rem;display:block;margin-bottom:8px}
+/* trip */
+.tl{max-width:760px;display:flex;flex-direction:column;gap:12px;position:relative}
+.ti{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--sh)}
+.tm{font-family:'Fraunces',serif;font-weight:700;color:var(--coral);min-width:58px}
+.ti div{flex:1}.ti small{color:var(--mute)}
+.x{background:var(--soft);color:var(--coral);width:34px;height:34px;border-radius:50%;font-size:1.1rem}
+.x:hover{background:var(--coral);color:#fff}
+/* smart */
+.smart{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;border-radius:28px;padding:40px;text-align:center}
+.smart h2{font-size:clamp(1.6rem,3vw,2.2rem);margin-bottom:6px}
+.smart .chips{justify-content:center;margin:20px 0}
+.smart .chip{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)}
+.smart .chip:hover,.smart .chip.on{background:#fff;color:var(--teal)}
+.sres{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;text-align:left;margin-top:8px}
+.sres .li{color:var(--ink)}
+.scroll{display:flex;gap:18px;overflow-x:auto;padding:6px 4px 20px;scroll-snap-type:x mandatory}
+.dc{flex:none;width:250px;height:300px;border-radius:var(--r);color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;scroll-snap-align:start;position:relative;overflow:hidden;box-shadow:var(--sh);transition:.25s;text-align:left}
+.dc:hover{transform:translateY(-5px)}
+.dc .e{position:absolute;top:20px;right:20px;font-size:3.4rem}
+.dc h3{font-size:1.3rem}.dc small{opacity:.9}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,30,36,.6);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.mb{background:#fff;border-radius:24px;max-width:760px;width:100%;max-height:92vh;overflow:auto;position:relative;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.mb .img{height:240px;font-size:6rem}
+.mc{padding:26px}
+.mc h2{color:var(--teal);margin-bottom:6px}
+.close{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;background:#fff;font-size:1.2rem;z-index:3;box-shadow:var(--sh)}
+.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:18px 0}
+.info div{background:var(--soft);border-radius:12px;padding:12px 14px;font-size:.9rem}
+.info b{display:block;color:var(--teal);font-size:.8rem}
+.mc ul{margin:8px 0 20px 20px;color:var(--mute)}
+/* footer */
+footer{background:var(--teal);color:#cfe3e8;padding:50px 0 24px}
+.fg{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:28px}
+footer .logo{color:#fff;margin-bottom:10px}
+footer h4{color:#fff;margin-bottom:10px}
+footer li{list-style:none;margin-bottom:6px}
+footer a:hover{color:var(--sun)}
+.soc{display:flex;gap:10px;margin-top:14px}
+.soc a{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;transition:.2s}
+.soc a:hover{background:var(--sun);color:var(--teal)}
+.copy{border-top:1px solid rgba(255,255,255,.15);margin-top:30px;padding-top:18px;font-size:.85rem;text-align:center}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:99px;z-index:200;opacity:0;pointer-events:none;transition:.3s}
+.toast.show{opacity:1}
+.ic{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+i[data-ic]{display:inline-grid;place-items:center;font-style:normal}
+.ib i{font-size:1.1rem}.lg{font-size:1.5rem;color:var(--coral)}.stat .e{color:var(--teal);font-size:1.9rem}.nc .e{color:var(--coral)}.nc:hover .e{color:var(--sun)}
+.nc .e .ic{width:2.4rem;height:2.4rem}.quick .ic,.btn .ic{margin-right:2px}
+.meta span{display:inline-flex;align-items:center;gap:5px}.meta .ic{width:1em;height:1em}
+.map{isolation:isolate;z-index:0}.mk{width:22px;height:22px;border-radius:50%;background:var(--coral);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.leaflet-tooltip{font-family:inherit;font-weight:600}
+.note{background:#fff7e6;border:1px solid #f5d28a;color:#6b4a00;padding:10px 16px;border-radius:12px;margin-bottom:16px}
+.x .ic,.close .ic{width:1em;height:1em}
+.search .btn.ghost{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+@media(max-width:900px){
+.mapgrid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.fg{grid-template-columns:1fr 1fr}
+.burger{display:grid}
+nav{position:absolute;top:68px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);display:none;padding:10px 20px 16px}
+nav.open{display:block}nav ul{flex-direction:column}
+.search{flex-direction:column;border-radius:24px}.search label{padding:10px 14px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap nav">
+  <a href="#home" class="logo"><i class="lg" data-ic="compass"></i><b class="lt">Explore<span>Local</span></b></a>
+  <nav id="nav" aria-label="Main">
+   <ul>
+    <li><a href="#home" class="on">Home</a></li>
+    <li><a href="#explore">Explore</a></li>
+    <li><a href="#map">Map</a></li>
+    <li><a href="#trip">My Trip<span class="badge" id="badge">0</span></a></li>
+    <li><a href="#about">About</a></li>
+   </ul>
+  </nav>
+  <div class="tools">
+   <button class="ib" id="sbtn" aria-label="Search"><i data-ic="search"></i></button>
+   <button class="ib" aria-label="Profile" onclick="toast('Sign-in is not part of this prototype')"><i data-ic="user"></i></button>
+   <button class="ib burger" id="burger" aria-label="Menu">☰</button>
+  </div>
+ </div>
+</header>
+
+<section class="hero" id="home">
+ <svg viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 220 C200 140 380 260 620 190 S1100 120 1440 210 V300 H0Z" fill="#1b7a8c" opacity=".55"/>
+  <path d="M0 250 C240 190 460 280 720 235 S1180 190 1440 250 V300 H0Z" fill="#0e4d5c" opacity=".8"/>
+  <g fill="#0a3a46"><rect x="200" y="215" width="14" height="60"/><circle cx="207" cy="205" r="18"/><path d="M880 275v-70l18-30 18 30v70zM870 200l28-45 28 45z"/><rect x="1000" y="230" width="60" height="50"/><rect x="1010" y="205" width="12" height="30"/><rect x="1036" y="195" width="12" height="40"/></g>
+  <path d="M0 280 C300 250 600 295 900 270 S1300 265 1440 285 V300 H0Z" fill="#fff"/>
+ </svg>
+ <div class="wrap">
+  <h1>Discover what's around you</h1>
+  <p class="sub">Find the best places to visit, eat and explore wherever you are.</p>
+  <form class="search" id="sform">
+   <label><i data-ic="pin"></i> <input id="area" value="Shah Alam, Selangor" placeholder="Where are you exploring?" aria-label="Where are you exploring?" list="places"></label>
+   <datalist id="places"><option value="Shah Alam, Selangor"><option value="Kuala Lumpur"><option value="Melaka"><option value="Penang"><option value="Langkawi"></datalist>
+   <button class="btn ghost" type="button" id="loc"><i data-ic="locate"></i> Use my location</button>
+   <button class="btn" type="submit">Explore Area</button>
+  </form>
+  <div class="quick" id="quick"></div>
+ </div>
+</section>
+
+<section class="overview" id="overview">
+ <div class="wrap">
+  <h2 style="font-size:clamp(1.8rem,3.4vw,2.6rem);color:var(--teal)">Explore <span class="city">Shah Alam</span></h2>
+  <p style="color:var(--mute);max-width:640px;margin-top:8px">Discover popular attractions, local food, parks, cultural landmarks and hidden gems around <span class="city">Shah Alam</span>.</p>
+  <div class="stats">
+   <div class="stat"><span class="e"><i data-ic="ticket"></i></span><div><b id="s1">18</b><small>Attractions</small></div></div>
+   <div class="stat"><span class="e"><i data-ic="food"></i></span><div><b id="s2">24</b><small>Food spots</small></div></div>
+   <div class="stat"><span class="e"><i data-ic="boat"></i></span><div><b id="s3">8</b><small>Activities</small></div></div>
+   <div class="stat"><span class="e"><i data-ic="gem"></i></span><div><b id="s4">6</b><small>Hidden Gems</small></div></div>
+  </div>
+ </div>
+</section>
+
+<section id="map">
+ <div class="wrap">
+  <div class="sec-h"><div><h2>Places near you</h2><p>Tap a pin to preview, or pick a place from the list.</p></div></div>
+  <div class="mapgrid">
+   <div class="map" id="mapbox"></div>
+   <div class="list" id="plist"></div>
+  </div>
+ </div>
+</section>
+
+<section id="explore" style="padding-top:20px">
+ <div class="wrap">
+  <div class="sec-h"><div><h2>Top Places to Visit</h2><p id="count"></p></div></div>
+  <p class="note" id="note" style="display:none"></p>
+  <div class="chips" id="chips"></div>
+  <div class="fbar">
+   <label>Distance <select id="fd"><option value="99">Any</option><option value="2">Within 2 km</option><option value="5">Within 5 km</option><option value="10">Within 10 km</option></select></label>
+   <label>Rating <select id="fr"><option value="0">Any</option><option value="4">4.0+</option><option value="4.5">4.5+</option><option value="4.7">4.7+</option></select></label>
+   <label class="tg"><input type="checkbox" id="fo"><span></span> Open Now</label>
+   <button class="btn ghost sm" id="reset">Reset filters</button>
+  </div>
+  <div class="grid" id="grid"></div>
+ </div>
+</section>
+
+<section class="near">
+ <div class="wrap">
+  <div class="sec-h"><div><h2>Explore Nearby</h2><p>Pick a category to filter the places above.</p></div></div>
+  <div class="ncards" id="ncards"></div>
+ </div>
+</section>
+
+<section id="trip">
+ <div class="wrap">
+  <div class="sec-h"><div><h2>My <span class="city">Shah Alam</span> Trip</h2><p>Your itinerary starts at 09:00 with about two hours per stop.</p></div><button class="btn ghost sm" id="clear">Clear trip</button></div>
+  <div class="tl" id="tl"></div>
+ </div>
+</section>
+
+<section style="padding-top:0">
+ <div class="wrap">
+  <div class="smart">
+   <h2>Not sure where to go?</h2>
+   <p>Tell us how you want to spend your time.</p>
+   <div class="chips" id="schips"></div>
+   <div class="sres" id="sres"></div>
+  </div>
+ </div>
+</section>
+
+<section style="padding-top:0">
+ <div class="wrap">
+  <div class="sec-h"><div><h2>Popular with tourists</h2><p>Swipe to see more destinations.</p></div></div>
+  <div class="scroll" id="pop"></div>
+ </div>
+</section>
+
+<section id="about" class="overview">
+ <div class="wrap" style="max-width:760px">
+  <h2 style="color:var(--teal);margin-bottom:10px">About ExploreLocal</h2>
+  <p style="color:var(--mute)">ExploreLocal helps travellers find what is worth their time within a few kilometres of where they stand: landmarks, local food, green spaces and the quiet spots locals love. This is a prototype using sample data.</p>
+ </div>
+</section>
+
+<footer>
+ <div class="wrap">
+  <div class="fg">
+   <div><div class="logo"><i class="lg" data-ic="compass"></i><b class="lt">Explore<span>Local</span></b></div><p style="max-width:280px">Discover what's around you, wherever you are.</p>
+    <div class="soc"><a href="#" aria-label="Facebook">f</a><a href="#" aria-label="Instagram">Ig</a><a href="#" aria-label="X">X</a><a href="#" aria-label="YouTube">Yt</a></div></div>
+   <div><h4>Discover</h4><ul><li><a href="#explore">Top places</a></li><li><a href="#map">Map</a></li><li><a href="#trip">My Trip</a></li></ul></div>
+   <div><h4>Destinations</h4><ul><li><a href="#pop">Shah Alam</a></li><li><a href="#pop">Melaka</a></li><li><a href="#pop">Penang</a></li></ul></div>
+   <div><h4>About</h4><ul><li><a href="#about">Our story</a></li><li><a href="#about">How it works</a></li></ul></div>
+   <div><h4>Contact</h4><ul><li><a href="#">hello@explorelocal.demo</a></li><li><a href="#">Privacy</a></li></ul></div>
+  </div>
+  <div class="copy">© 2026 ExploreLocal prototype. Sample data only.</div>
+ </div>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Place details"><div class="mb" id="mb"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const IC={compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',pin:'<path d="M12 21s7-6 7-12a7 7 0 10-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',ticket:'<path d="M3 9a2 2 0 002-2h14a2 2 0 002 2v6a2 2 0 00-2 2H5a2 2 0 00-2-2z"/><path d="M12 7v10"/>',food:'<path d="M7 3v8M4 3v5a3 3 0 006 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>',tree:'<path d="M12 21v-6M12 3l6 9h-3l4 6H5l4-6H6z"/>',landmark:'<path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 21h18"/>',bag:'<path d="M5 8h14l-1 13H6zM9 8a3 3 0 016 0"/>',camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',gem:'<path d="M6 4h12l3 5-9 11L3 9zM3 9h18M9 4l3 16M15 4l-3 16"/>',boat:'<path d="M3 15h18l-3 5H6zM12 3v12M12 4l6 9h-6"/>',locate:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+const CITIES={
+"shah-alam":{name:"Shah Alam",sub:"Selangor",c:[3.0733,101.5185],al:["shah alam"]},
+"melaka":{name:"Melaka",sub:"Historic port city",c:[2.1944,102.2501],al:["melaka","malacca"]},
+"penang":{name:"Penang",sub:"Street food capital",c:[5.4141,100.3288],al:["penang","george town","georgetown"]},
+"langkawi":{name:"Langkawi",sub:"Island getaway",c:[6.35,99.8],al:["langkawi"]},
+"kuala-lumpur":{name:"Kuala Lumpur",sub:"Skyline and street food",c:[3.139,101.6869],al:["kuala lumpur"]},
+"ipoh":{name:"Ipoh",sub:"Cave temples and old town",c:[4.5975,101.0901],al:["ipoh"]}};
+const GR={attractions:["#1b7a8c","#7fd1de"],nature:["#2f9e6b","#a6e3b9"],food:["#d9482b","#ffb36b"],shopping:["#f5a524","#fbd98a"],culture:["#a0622d","#e8be8a"],activities:["#1b7a8c","#9bdcec"],hidden:["#ef6a4c","#ffb199"]};
+/* city,name,type,tags,rating,lat,lng,duration,open,location,hours,fee,best time,things,description,photo */
+const ROWS=[
+["shah-alam","Sultan Salahuddin Abdul Aziz Mosque","Landmark / Culture","attractions culture insta",4.8,3.0786,101.5185,"1–2 hours",1,"Persiaran Masjid, Seksyen 14, Shah Alam","9:00 AM – 5:00 PM (closed during prayers)","Free (modest dress required)","Early morning or late afternoon","Join a guided tour|Photograph the dome from the gardens|Visit the Islamic gallery","The iconic Blue Mosque, with a huge blue dome and four slender minarets.","blue-mosque"],
+["shah-alam","Shah Alam Lake Gardens","Nature","nature activities attractions",4.6,3.0617,101.5258,"1–2 hours",1,"Seksyen 14, Shah Alam","Open 24 hours","Free","Sunrise or sunset","Rent a paddle boat|Walk the lakeside trail|Picnic on the lawn","A large lakeside park with shaded jogging paths, paddle boats and picnic lawns.","lake-gardens"],
+["shah-alam","i-City","Entertainment","attractions activities insta",4.4,3.0653,101.485,"3–4 hours",1,"Seksyen 7, Shah Alam","12:00 PM – 11:00 PM","Light show free; attractions from RM 35","After sunset","Walk the LED light gardens|Try the Trick Eye Museum|Eat at the street food row","A glowing digital city with LED light displays, a theme park and a snow world.","i-city"],
+["shah-alam","Setia City Mall","Shopping","shopping food",4.5,3.1093,101.4619,"2–3 hours",1,"Setia Alam, Shah Alam","10:00 AM – 10:00 PM","Free entry","Weekday afternoons","Browse local brands|Try regional dishes at the food court|Catch a film","A modern mall with fashion, a large food court and a bright atrium.","setia-city-mall"],
+["shah-alam","Taman Botani Negara Shah Alam","Nature","nature attractions",4.5,3.099,101.496,"2–4 hours",0,"Persiaran Botani, Seksyen 14, Shah Alam","8:00 AM – 6:00 PM","RM 5 adults","Morning","Cycle the main loop|Visit the herbal garden|Spot birds at the lake","A large botanical garden with themed gardens and quiet forest trails.","botani-negara"],
+["shah-alam","Laman Seni 7","Art / Hidden Gem","hidden culture insta",4.3,3.079,101.493,"1 hour",1,"Seksyen 7, Shah Alam","10:00 AM – 7:00 PM","Free","Weekend afternoons","Hunt for murals|Chat with resident artists|Grab coffee at the courtyard cafe","A small creative hub of murals, studios and pop-up galleries.","laman-seni-7"],
+["shah-alam","Seksyen 7 Night Food Stalls","Local Food","food hidden",4.7,3.08,101.495,"1–2 hours",0,"Jalan Plumbum, Seksyen 7, Shah Alam","5:00 PM – 1:00 AM","Pay per dish (from RM 5)","Early evening","Order satay by the dozen|Try iced cendol|Share a mixed rice plate","A lively evening strip of satay, mee goreng, cendol and nasi lemak stalls.","night-food-stalls"],
+["shah-alam","Heritage Craft Centre","Culture & Heritage","culture shopping hidden",4.2,3.056,101.51,"1–2 hours",1,"Seksyen 24, Shah Alam","9:00 AM – 5:30 PM","Free; workshops from RM 25","Weekday mornings","Try a batik workshop|Shop for handmade gifts|Learn about songket weaving","Watch batik, songket and woodcarving artisans at work.","heritage-craft"],
+["shah-alam","Kayak at Lake Gardens","Activity","activities nature",4.6,3.0605,101.527,"1 hour",1,"Jetty, Lake Gardens, Seksyen 14","8:00 AM – 6:00 PM","RM 20 per person","Morning","Take a beginner lesson|Paddle at golden hour|Bring a waterproof phone case","Guided kayak sessions across the calm lake, suitable for beginners.","kayak-lake"],
+["melaka","A Famosa","Landmark / Culture","attractions culture",4.5,2.1914,102.2501,"1 hour",1,"Jalan Kota, Melaka","Open 24 hours","Free","Morning","Climb to the gatehouse|Explore St Paul's Hill|Visit nearby museums","Remains of a 16th-century Portuguese fortress."],
+["melaka","Jonker Street","Food / Shopping","food shopping insta",4.6,2.1962,102.2492,"2–3 hours",1,"Jalan Hang Jebat, Melaka","10:00 AM – 11:00 PM (night market Fri–Sun)","Free entry","Weekend evenings","Try chicken rice balls|Browse antiques|Sample cendol","A lively heritage street of antiques, snacks and a weekend night market."],
+["melaka","Menara Taming Sari","Attraction","attractions activities",4.3,2.193,102.2488,"1 hour",1,"Jalan Merdeka, Melaka","10:00 AM – 11:00 PM","From RM 30","Sunset","Ride the revolving tower|See the old town from above|Photograph the skyline","A revolving tower with panoramic views over the old town."],
+["penang","Armenian Street","Art / Hidden Gem","hidden culture insta",4.5,5.415,100.3375,"1–2 hours",1,"Lebuh Armenian, George Town","Open 24 hours","Free","Morning","Find the street murals|Visit small galleries|Stop for local coffee","A narrow heritage lane known for murals, shophouses and galleries."],
+["penang","Kek Lok Si Temple","Culture & Heritage","culture attractions",4.6,5.3983,100.2738,"2 hours",1,"Air Itam, Penang","8:30 AM – 5:30 PM","Free; pagoda ticket extra","Morning","Climb the pagoda|See the Goddess of Mercy statue|Browse the temple stalls","One of Southeast Asia's largest Buddhist temple complexes."],
+["penang","Gurney Drive Hawker Centre","Local Food","food",4.4,5.4366,100.3184,"1–2 hours",0,"Persiaran Gurney, George Town","5:00 PM – 12:00 AM","Pay per dish","Early evening","Try char kway teow|Order assam laksa|Walk the seafront","Seafront hawker stalls serving classic Penang dishes."],
+["langkawi","Langkawi Sky Bridge","Attraction","attractions nature",4.6,6.3858,99.6643,"3 hours",1,"Gunung Machincang, Langkawi","9:30 AM – 7:00 PM","Cable car from RM 85","Morning (clear skies)","Ride the cable car|Walk the curved bridge|Take in the island views","A curved pedestrian bridge above the rainforest, reached by cable car."],
+["langkawi","Pantai Cenang","Nature / Beach","nature activities insta",4.4,6.294,99.727,"2–4 hours",1,"Pantai Cenang, Langkawi","Open 24 hours","Free","Late afternoon","Swim and sunbathe|Try water sports|Watch the sunset","Langkawi's busiest beach, with cafes, shops and water sports."],
+["langkawi","Kilim Karst Geoforest Park","Nature","nature activities hidden",4.7,6.4183,99.846,"4 hours",1,"Kilim, Langkawi","9:00 AM – 5:00 PM","Tours from RM 60","Morning","Boat through the mangroves|See limestone formations|Watch eagles feed","A mangrove and limestone landscape explored by boat tour."],
+["kuala-lumpur","Petronas Twin Towers","Landmark","attractions insta shopping",4.7,3.1579,101.7116,"2 hours",1,"Kuala Lumpur City Centre","9:00 AM – 9:00 PM (closed Mon)","Observation deck from RM 98","Evening","Visit the skybridge|Walk KLCC Park|Shop at Suria KLCC","Iconic twin skyscrapers with a skybridge and observation deck."],
+["kuala-lumpur","Batu Caves","Culture & Nature","culture nature attractions",4.5,3.2379,101.684,"2–3 hours",1,"Gombak, Selangor","6:00 AM – 9:00 PM","Free (cave villa extra)","Early morning","Climb the 272 steps|Visit the temple cave|Watch for macaques","A limestone hill with a giant golden statue and a Hindu temple cave."],
+["kuala-lumpur","Jalan Alor","Local Food","food",4.4,3.1457,101.7092,"1–2 hours",0,"Bukit Bintang, Kuala Lumpur","5:00 PM – 3:00 AM","Pay per dish","After sunset","Try grilled chicken wings|Sample durian|Share seafood","A famous night food street in Bukit Bintang."],
+["ipoh","Concubine Lane","Hidden Gem","hidden shopping insta",4.2,4.5973,101.0775,"1 hour",1,"Lorong Panglima, Ipoh Old Town","9:00 AM – 6:00 PM","Free","Morning","Sip white coffee|Browse souvenirs|Take photos in the lane","A narrow Old Town lane with cafes, murals and souvenir stalls."],
+["ipoh","Perak Tong Cave Temple","Culture","culture attractions",4.4,4.656,101.1025,"1–2 hours",1,"Gunung Rapat, Ipoh","8:00 AM – 5:00 PM","Free (donations welcome)","Morning","Climb to the hilltop view|See the cave murals|Visit the Buddha statue","A cave temple filled with Buddhist statues and murals."],
+["ipoh","Sam Poh Tong Temple","Culture & Nature","culture nature",4.3,4.547,101.133,"1 hour",1,"Gunung Rapat, Ipoh","8:00 AM – 5:00 PM","Free","Morning","Walk through the cave|Feed the turtles|See the garden pond","A cave temple with a koi pond and a turtle pond in a limestone hill."]];
+const PLACES=ROWS.map((r,i)=>({id:i+1,city:r[0],name:r[1],type:r[2],tags:r[3].split(" "),r:r[4],lat:r[5],lng:r[6],dur:r[7],open:!!r[8],loc:r[9],hours:r[10],fee:r[11],best:r[12],things:r[13].split("|"),desc:r[14],photo:r[15]||"dest-"+r[0],d:0}));
+const CATS=[["all","All"],["attractions","Attractions"],["food","Food"],["nature","Nature"],["shopping","Shopping"],["culture","Culture"],["activities","Activities"],["hidden","Hidden Gems"]];
+const NEAR=[["food","food","Local Food"],["nature","tree","Parks & Nature"],["culture","landmark","Culture & Heritage"],["shopping","bag","Shopping"],["activities","boat","Activities"],["insta","camera","Instagram Spots"]];
+const hrs=p=>Math.max(...p.dur.match(/\d+/g));
+const SMART=[["I have 2 hours",p=>hrs(p)<=2],["Half Day",p=>hrs(p)>=2&&hrs(p)<=4],["Full Day",p=>true],["Food Lover",p=>p.tags.includes("food")],["Nature Lover",p=>p.tags.includes("nature")],["Family Trip",p=>p.tags.some(t=>["nature","activities","shopping"].includes(t))],["First Time Here",p=>p.r>=4.5]];
+let cat="all",cur={key:"shah-alam"},ref={lat:3.0733,lng:101.5185},si=0,trip=[],map,layer,refMk;
+try{trip=JSON.parse(localStorage.getItem("el_trip")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("el_trip",JSON.stringify(trip))}catch(e){}};
+const byId=id=>PLACES.find(p=>p.id===id);
+const grad=p=>{const g=GR[p.tags[0]]||GR.attractions;return `linear-gradient(135deg,${g[0]},${g[1]})`};
+const EXTS=["jpg","jpeg","png","webp","JPG","PNG"];
+const im=(n,alt)=>`<img src="images/${n}.jpg" alt="${alt}" data-n="${n}" data-i="0" loading="lazy" onerror="nx(this)">`;
+function nx(i){const k=+i.dataset.i+1;if(k<EXTS.length){i.dataset.i=k;i.src=`images/${i.dataset.n}.${EXTS[k]}`}else i.remove()}
+(function(){let i=0;const t=new Image(),h=document.getElementById("home");
+ t.onload=()=>{h.style.background=`linear-gradient(180deg,rgba(8,40,50,.6),rgba(8,40,50,.35) 55%,rgba(8,40,50,.7)),url(images/hero.${EXTS[i]}) center/cover`;h.classList.add("photo")};
+ t.onerror=()=>{if(++i<EXTS.length)t.src=`images/hero.${EXTS[i]}`};t.src=`images/hero.${EXTS[0]}`})();
+const hav=(a,b,c,d)=>{const t=x=>x*Math.PI/180,u=t(c-a),v=t(d-b),h=Math.sin(u/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(v/2)**2;return 12742*Math.asin(Math.sqrt(h))};
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600)}
+const areaPlaces=()=>PLACES.filter(p=>p.city===cur.key);
+function filtered(){const d=+$("#fd").value,r=+$("#fr").value,o=$("#fo").checked;
+ return areaPlaces().filter(p=>(cat==="all"||p.tags.includes(cat))&&p.d<=d&&p.r>=r&&(!o||p.open)).sort((a,b)=>a.d-b.d)}
+function render(){
+ const list=filtered();
+ $("#count").textContent=cur.key?list.length+" place"+(list.length===1?"":"s")+" match your filters":"";
+ $("#grid").innerHTML=list.length?list.map(p=>`<article class="card">
+  <div class="img" style="background:${grad(p)}">${im(p.photo,p.name)}<em>${p.type}</em><span class="op" style="background:${p.open?'#2f9e6b':'#8a979c'}">${p.open?'Open now':'Closed'}</span></div>
+  <div class="body"><h3>${p.name}</h3><p>${p.desc}</p>
+  <div class="meta"><span class="r">${ic("star")} ${p.r}</span><span>${ic("pin")} ${p.d} km</span><span>${ic("clock")} ${p.dur}</span></div>
+  <div class="acts"><button class="btn ghost sm" data-d="${p.id}">View Details</button><button class="btn sm" data-a="${p.id}">${trip.includes(p.id)?'Added':'Add to Trip'}</button></div></div></article>`).join(""):`<div class="empty">${cur.key?"No places match these filters. Try widening the distance or rating.":"We don't have curated places for this area yet. Try Shah Alam, Melaka, Penang, Langkawi, Kuala Lumpur or Ipoh."}</div>`;
+ $("#plist").innerHTML=list.map(p=>`<button class="li" data-p="${p.id}"><span class="th" style="background:${grad(p)}">${im(p.photo,"")}</span><span><b>${p.name}</b><small>${p.r} rating · ${p.d} km</small></span></button>`).join("");
+ layer.clearLayers();
+ list.forEach(p=>L.marker([p.lat,p.lng],{title:p.name,icon:L.divIcon({className:"",html:'<div class="mk"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).bindTooltip(p.name).on("click",()=>{mark(p.id);openModal(p.id)}).addTo(layer));
+ const pts=list.map(p=>[p.lat,p.lng]).concat([[ref.lat,ref.lng]]);
+ pts.length>1?map.fitBounds(pts,{padding:[40,40],maxZoom:15}):map.setView([ref.lat,ref.lng],12);
+ document.querySelectorAll("#chips .chip").forEach(c=>c.classList.toggle("on",c.dataset.c===cat));
+}
+function mark(id){document.querySelectorAll("#plist .li").forEach(n=>n.classList.toggle("act",n.dataset.p==id))}
+function renderTrip(){
+ $("#badge").textContent=trip.length;
+ $("#tl").innerHTML=trip.length?trip.map((id,i)=>{const p=byId(id),h=9+i*2;
+  return `<div class="ti"><span class="tm">${String(h).padStart(2,"0")}:00</span><div><b>${p.name}</b><br><small>${p.type} · ${p.dur}</small></div><button class="x" data-rm="${id}" aria-label="Remove ${p.name}">${ic("x")}</button></div>`}).join(""):`<div class="empty">Your trip is empty. Choose <b>Add to Trip</b> on any place to start planning.</div>`;
+}
+function add(id){if(trip.includes(id)){toast("Already in your trip");return}trip.push(id);save();renderTrip();render();toast("Added to your trip")}
+function openModal(id){
+ const p=byId(id);mark(id);
+ $("#mb").innerHTML=`<button class="close" aria-label="Close" id="cl">${ic("x")}</button>
+ <div class="img" style="background:${grad(p)}">${im(p.photo,p.name)}</div>
+ <div class="mc"><h2>${p.name}</h2><div class="meta"><span class="r">${ic("star")} ${p.r}</span><span>${p.type}</span><span>${ic("pin")} ${p.d} km away</span></div>
+ <p style="margin-top:12px;color:var(--mute)">${p.desc}</p>
+ <div class="info"><div><b>Location</b>${p.loc}</div><div><b>Opening hours</b>${p.hours}</div><div><b>Entry fee</b>${p.fee}</div><div><b>Recommended visit</b>${p.dur}</div><div><b>Best time to visit</b>${p.best}</div></div>
+ <h3 style="font-size:1.05rem;color:var(--teal)">Things to do</h3><ul>${p.things.map(t=>`<li>${t}</li>`).join("")}</ul>
+ <div class="acts"><a class="btn ghost" style="text-align:center" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?to=${p.lat}%2C${p.lng}">Get Directions</a><button class="btn" id="madd">Add to My Trip</button></div></div>`;
+ $("#modal").classList.add("open");document.body.style.overflow="hidden";
+ $("#cl").onclick=closeModal;$("#madd").onclick=()=>add(id);$("#cl").focus();
+}
+function closeModal(){$("#modal").classList.remove("open");document.body.style.overflow=""}
+function smart(i){si=i;
+ document.querySelectorAll("#schips .chip").forEach((c,j)=>c.classList.toggle("on",i===j));
+ const l=areaPlaces().filter(SMART[i][1]).sort((a,b)=>b.r-a.r).slice(0,4);
+ $("#sres").innerHTML=l.length?l.map(p=>`<button class="li" data-d="${p.id}"><span class="th" style="background:${grad(p)}">${im(p.photo,"")}</span><span><b>${p.name}</b><small>${p.dur} · ${p.r} rating</small></span></button>`).join(""):`<p>No matching places in this area yet.</p>`;
+}
+function setArea(key,pt,note,label){
+ cur={key};ref={lat:pt[0],lng:pt[1]};
+ const nm=key?CITIES[key].name:label;
+ document.querySelectorAll(".city").forEach(e=>e.textContent=nm);
+ PLACES.forEach(p=>p.d=+hav(pt[0],pt[1],p.lat,p.lng).toFixed(1));
+ const n=document.getElementById("note");n.textContent=note||"";n.style.display=note?"block":"none";
+ const a=areaPlaces(),c=t=>a.filter(p=>p.tags.includes(t)).length;
+ $("#s1").textContent=c("attractions");$("#s2").textContent=c("food");$("#s3").textContent=c("activities");$("#s4").textContent=c("hidden");
+ cat="all";$("#fd").value=99;$("#fr").value=0;$("#fo").checked=false;
+ refMk.setLatLng(pt);render();smart(si);
+}
+const nearest=(a,b,max)=>{let k=null,m=max;for(const x in CITIES){const d=hav(a,b,...CITIES[x].c);if(d<m){m=d;k=x}}return k};
+function useCity(k){setArea(k,CITIES[k].c);$("#overview").scrollIntoView()}
+async function geo(q){try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q)),j=await r.json();return j[0]?{lat:+j[0].lat,lng:+j[0].lon}:null}catch(e){return null}}
+async function go(q){
+ const low=q.toLowerCase(),k=Object.keys(CITIES).find(x=>CITIES[x].al.some(a=>low.includes(a)));
+ if(k){useCity(k);return}
+ toast("Searching...");
+ const g=await geo(q);
+ if(!g){toast("Could not find that place. Try another name.");return}
+ const nk=nearest(g.lat,g.lng,40),nm=q.split(",")[0];
+ nk?setArea(nk,[g.lat,g.lng],`Showing places in ${CITIES[nk].name}, with distances measured from ${nm}.`):setArea(null,[g.lat,g.lng],`We don't have curated places for ${nm} yet. The map shows its location.`,nm);
+ $("#overview").scrollIntoView();
+}
+function locate(){
+ if(!navigator.geolocation){toast("Location is not supported in this browser.");return}
+ toast("Finding your location...");
+ navigator.geolocation.getCurrentPosition(p=>{
+  const a=p.coords.latitude,b=p.coords.longitude,k=nearest(a,b,60);
+  k?setArea(k,[a,b],`Showing places in ${CITIES[k].name}, with distances measured from your location.`):setArea(null,[a,b],"We don't have curated places near your location yet. The map shows where you are.","Your location");
+  $("#overview").scrollIntoView();
+ },()=>toast("Could not get your location. Allow location access and open the site over https."),{timeout:12000});
+}
+/* build static bits */
+document.querySelectorAll("[data-ic]").forEach(e=>e.innerHTML=ic(e.dataset.ic));
+$("#chips").innerHTML=CATS.map(c=>`<button class="chip" data-c="${c[0]}">${c[1]}</button>`).join("");
+$("#quick").innerHTML=[["attractions","ticket","Attractions"],["food","food","Food"],["nature","tree","Nature"],["shopping","bag","Shopping"],["culture","landmark","Culture"],["activities","boat","Activities"]].map(c=>`<button data-q="${c[0]}">${ic(c[1])} ${c[2]}</button>`).join("");
+$("#ncards").innerHTML=NEAR.map(n=>`<button class="nc" data-q="${n[0]}"><span class="e">${ic(n[1])}</span>${n[2]}</button>`).join("");
+$("#schips").innerHTML=SMART.map((s,i)=>`<button class="chip" data-s="${i}">${s[0]}</button>`).join("");
+$("#pop").innerHTML=Object.keys(CITIES).map(k=>`<button class="dc" data-city="${k}">${im("dest-"+k,CITIES[k].name)}<h3>${CITIES[k].name}</h3><small>${CITIES[k].sub}</small></button>`).join("");
+$("#places").innerHTML=Object.values(CITIES).map(c=>`<option value="${c.name}">`).join("");
+map=L.map("mapbox",{scrollWheelZoom:false}).setView(CITIES["shah-alam"].c,12);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+layer=L.layerGroup().addTo(map);
+refMk=L.circleMarker(CITIES["shah-alam"].c,{radius:8,color:"#fff",weight:3,fillColor:"#2d7ff9",fillOpacity:1}).bindTooltip("Distances are measured from here").addTo(map);
+setArea("shah-alam",CITIES["shah-alam"].c);renderTrip();
+/* events */
+document.addEventListener("click",e=>{
+ const t=e.target.closest("[data-d],[data-a],[data-c],[data-q],[data-s],[data-rm],[data-p],[data-city]");
+ if(!t)return;
+ if(t.dataset.d)openModal(+t.dataset.d);
+ else if(t.dataset.a)add(+t.dataset.a);
+ else if(t.dataset.c){cat=t.dataset.c;render()}
+ else if(t.dataset.q){cat=t.dataset.q;render();$("#explore").scrollIntoView()}
+ else if(t.dataset.s)smart(+t.dataset.s);
+ else if(t.dataset.rm){trip=trip.filter(i=>i!==+t.dataset.rm);save();renderTrip();render();toast("Removed from your trip")}
+ else if(t.dataset.p&&t.closest("#plist")){const p=byId(+t.dataset.p);mark(p.id);map.panTo([p.lat,p.lng]);openModal(p.id)}
+ else if(t.dataset.city){$("#area").value=CITIES[t.dataset.city].name;useCity(t.dataset.city)}
+});
+$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+["#fd","#fr","#fo"].forEach(s=>$(s).addEventListener("change",render));
+$("#reset").onclick=()=>{cat="all";$("#fd").value=99;$("#fr").value=0;$("#fo").checked=false;render()};
+$("#clear").onclick=()=>{trip=[];save();renderTrip();render()};
+$("#sform").addEventListener("submit",e=>{e.preventDefault();const v=$("#area").value.trim();if(!v){toast("Enter an area to explore");$("#area").focus();return}go(v)});
+$("#loc").onclick=locate;
+$("#sbtn").onclick=()=>{$("#home").scrollIntoView();setTimeout(()=>$("#area").focus(),500)};
+$("#burger").onclick=()=>$("#nav").classList.toggle("open");
+$("#nav").addEventListener("click",e=>{if(e.target.closest("a"))$("#nav").classList.remove("open")});
+const links=[...document.querySelectorAll("nav a")];
+window.addEventListener("scroll",()=>{let cur2="#home";links.forEach(a=>{const s=$(a.getAttribute("href"));if(s&&s.getBoundingClientRect().top<140)cur2=a.getAttribute("href")});links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")===cur2))},{passive:true});
+</script>
+</body>
+</html>
